@@ -1,0 +1,35 @@
+- hosts: db
+  user: root
+  tasks:
+  - name: get epel-repo
+    get_url: dest=/tmp/epel-release.rpm  url=http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
+    when: ansible_os_family == 'RedHat' and ansible_lsb.major_release|int == 6
+  - name: install epel-repo rpm
+    yum: pkg=/tmp/epel-release.rpm state=installed
+  - name: copy mariadb repo file
+    copy: src=/etc/ansible/files/MariaDB.repo dest=/etc/yum.repos.d/MariaDB.repo
+  - name: install mariadb galera server
+    yum: name=MariaDB-Galera-server state=latest
+  - name: copy mariadb config file
+    copy: src=/etc/ansible/files/galera.cnf dest=/etc/my.cnf.d/galera.cnf
+- hosts: cluster1
+  user: root
+  tasks:
+  - name: is mysql running?
+    action: shell service mysql status
+    register: is_mysql_running
+    ignore_errors: true
+  - name: bootstrap by starting mysql with gcomm://
+    action: shell service mysql start --wsrep-cluster-address="gcomm://"
+    when: is_mysql_running.rc > 0
+- hosts: cluster2:cluster3
+  tasks:  
+  - name: if the cluster is not started already, start it
+    action: service name=mysql state=started
+	- hosts: cluster1
+  user: root
+  tasks:
+  - name: Create user for MaxScale
+    mysql_user: name=maxuser host="%" password=maxpwd priv=*.*:ALL state=present
+  - name: Create monitoring user for MaxScale
+    mysql_user: name=maxmon host="%" password=maxpwd priv=*.*:"REPLICATION CLIENT" state=present
