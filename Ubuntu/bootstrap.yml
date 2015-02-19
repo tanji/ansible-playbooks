@@ -1,0 +1,15 @@
+- hosts: node1
+  user: root
+  tasks:
+  - name: bootstrap the first node
+    service: name=mysql state=restarted args="--wsrep_new_cluster"
+- hosts: node2:node3
+  user: root
+  tasks:
+  - name: make the other nodes join the cluster
+    service: name=mysql state=restarted args="--wsrep_cluster_address=gcomm://10.251.150.2"
+- hosts: node1
+  user: root
+  tasks:
+  - name: Create admin user
+    mysql_user: name=demo host="%" password=omed priv=*.*:ALL state=present
