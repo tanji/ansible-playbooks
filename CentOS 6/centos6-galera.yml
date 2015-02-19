@@ -27,7 +27,7 @@
     ignore_errors: true
 
   - name: bootstrap by starting mysql with gcomm://
-    action: shell service mysql start --wsrep-cluster-address="gcomm://"
+    action: shell service mysql start --wsrep_new_cluster
     when: is_mysql_running.rc > 0
 
 - hosts: node2:node3
